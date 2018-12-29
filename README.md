@@ -35,4 +35,4 @@ Qt5 başarıyla yüklenmiş olmalı.
 
 ## Kullanımı
 
-
+![örnek](https://github.com/MEfeTiryaki/plotgui/resource/plot_example.png)
