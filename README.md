@@ -13,8 +13,8 @@ Gereksinimler:
 
 
 Planlanan Eklemeler
-*a
- *a
+* a
+ * a
 
 ## QT5 yükleme
 Qt5'i kaynak kodundan yüklemek için [sitesinden](https://www.qt.io/download) kaynak kodunu indirin.Ardından sıkıştırılmış dosyayı uygun bir yere açın (qt sürümü farklı olabilir).
