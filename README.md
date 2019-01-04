@@ -1,5 +1,5 @@
 # Plot Gui
-English version is below.
+[English version](https://github.com/MEfeTiryaki/plotgui/wiki/English-Version).
 
 C++ projeleri için kullanışlı bir plot yordamlığı olmaması dolayısıyla bu yordamlığı hazırladım. Herşeyden önce [QCP](
 https://www.qcustomplot.com/) ekibine alkışlarımı bildirmek isterim, onların çalışması olmasa bu yordamlığı hazırlayamazdım. QCP çok esnek plot arayüzü araçları sunsa da sıradan kullanıcılar için karmaşık gelebilir. İşbu yordamlığı, kullanımı kolaylaştırmak adına mümkün oldukça Matlab plot yordamlarına benzer şekilde tasarlamaya ve benzer işlevleri vermeğe çalıştım. 
