@@ -9,7 +9,7 @@ Yordamlık şimdilik "Catkinized" olarak derlenebiliyor. İleride "make;make ins
 
 Gereksinimler:
 * Eigen (3.2.92 sürümü, ubuntu 16.04'da yüklü gelir.)
-* QT (5.12.0 sürümü, cmake şimdilik kaynak koddan yüklemiş qt yordamlarını bulabiliyor.)
+* [QT](https://github.com/MEfeTiryaki/plotgui/wiki/QT5-y%C3%BCkleme) (5.12.0 sürümü, cmake şimdilik kaynak koddan yüklemiş qt yordamlarını bulabiliyor.)
 
 
 Planlanan Eklemeler
@@ -38,5 +38,5 @@ Planlanan Eklemeler
 
 
 ## Kullanımı
-
+Kullanım için "test" dizini inceleyebilirsiniz. Kendi catkin paketinize eklemek için Qt5Widget'i CMakelist'inize eklemeniz gerekiyor.
 ![örnek](https://github.com/MEfeTiryaki/plotgui/blob/master/resource/plot_example.png)
