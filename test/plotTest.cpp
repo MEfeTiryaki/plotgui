@@ -22,7 +22,13 @@ int main()
   QApplication app(argc, argv);
   PlotGui gui;
 
-  gui.makeTestPlot();
+  gui.makeTestPlot(1);
+  gui.holdOn();
+  gui.makeTestPlot(0.5);
+
+  std::vector<std::string> legendNames(1);
+  legendNames[0] = "asd";
+  gui.legend(legendNames);
   gui.show();
 
   return app.exec();
