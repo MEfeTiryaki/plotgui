@@ -5,7 +5,7 @@
  *      Author: efe
  */
 
-#include "PlotGui.h"
+#include "plotgui/PlotGui.h"
 #include "ui_plotgui.h"
 
 PlotGui::PlotGui(QWidget *parent)
@@ -53,7 +53,7 @@ PlotGui::PlotGui(QWidget *parent)
   ui_->toolbar->addWidget(cursorPointLabel_);
 
   connect(plot_, SIGNAL(mousePress(QMouseEvent*)), this, SLOT(mousePress(QMouseEvent*)));
-  connect(plot_, SIGNAL(	mouseDoubleClick(QMouseEvent*)), this, SLOT(mouseDoubleClick(QMouseEvent*)));
+  connect(plot_, SIGNAL(mouseDoubleClick(QMouseEvent*)), this, SLOT(mouseDoubleClick(QMouseEvent*)));
   //connect(plot_, SIGNAL(mouseMove(QWheelEvent*)), this, SLOT(wheelEvent(QWheelEvent*)));
 
 
@@ -108,6 +108,20 @@ void PlotGui::plot(Eigen::VectorXd x_eig, Eigen::VectorXd y_eig, Qt::GlobalColor
 
 }
 
+void PlotGui::plot(Eigen::VectorXd x_eig, Eigen::VectorXd y_eig, int lineWidth){
+  plot(x_eig, y_eig);
+  QPen pen = axisGraphs_[lastEditedAxis_].back()->pen();
+  pen.setWidth(lineWidth);
+  axisGraphs_[lastEditedAxis_].back()->setPen(pen);
+}
+void PlotGui::plot(Eigen::VectorXd x_eig, Eigen::VectorXd y_eig, Qt::GlobalColor color ,int lineWidth){
+  plot(x_eig, y_eig, color);
+  QPen pen = QPen(color);
+  pen.setWidth(lineWidth);
+  axisGraphs_[lastEditedAxis_].back()->setPen(pen);
+}
+
+
 void PlotGui::scatter(Eigen::VectorXd x_eig, Eigen::VectorXd y_eig)
 {
   scatter(x_eig, y_eig, Qt::blue);
@@ -116,9 +130,8 @@ void PlotGui::scatter(Eigen::VectorXd x_eig, Eigen::VectorXd y_eig)
 void PlotGui::scatter(Eigen::VectorXd x_eig, Eigen::VectorXd y_eig, Qt::GlobalColor color)
 {
   plot(x_eig, y_eig, color);
-  //plot_->graph(lastEditedGraph_)->setLineStyle(QCPGraph::lsNone);
-  //plot_->graph(lastEditedGraph_)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 4));
-  //plot_->replot();
+  axisGraphs_[lastEditedAxis_].back()->setLineStyle(QCPGraph::lsNone);
+  axisGraphs_[lastEditedAxis_].back()->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 4));
 }
 
 
@@ -133,7 +146,7 @@ void PlotGui::makeTestPlot(double k )
     y[i] = k * x[i] * x[i];  // let's plot a quadratic function
     //std::cout<<k <<","<<x[i] <<","<<y[i] <<","<<std::endl;
   }
-  plot(x,y);
+  plot(x,y,5);
 
 }
 
@@ -178,7 +191,7 @@ void PlotGui::subplot(int v,int h,int index){
         axisLegends_.push_back(new QCPLegend());
         axisRects_.back()->insetLayout()->addElement(
              axisLegends_.back(), Qt::AlignTop|Qt::AlignRight);
-        axisRects_.back()->setLayer("legend");
+        axisLegends_.back()->setLayer("legend");
 
         axisGraphs_.push_back(std::vector<QCPGraph*>(0));
         lastEditedGraphes_.push_back(0);
@@ -283,6 +296,7 @@ void PlotGui::legend(std::vector<std::string> legendNames)
 {
     legend(legendNames,15);
 }
+
 void PlotGui::legend(std::vector<std::string> legendNames, int fontSize)
 {
   axisLegends_[lastEditedAxis_]->clearItems();

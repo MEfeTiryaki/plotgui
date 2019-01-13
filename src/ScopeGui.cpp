@@ -5,7 +5,7 @@
  *      Author: efe
  */
 
-#include "ScopeGui.h"
+#include "plotgui/ScopeGui.h"
 #include "ui_plotgui.h"
 
 ScopeGui::ScopeGui(QWidget *parent)
@@ -14,15 +14,17 @@ ScopeGui::ScopeGui(QWidget *parent)
       zoomFlag(false),
       moveFlag(false),
       stopFlag_(false),
-      updateRate_(10),
+      updateRate_(0),
       autoFitYAxis_(true),
-      xAxisRange_(10),
-      constantXAxisRange_(true),
+      xAxisRange_(1.0),
+      yAxisMin_(0.0),
+      yAxisMax_(1.0),
+      constantXAxisRange_(false),
       lastDataX_(0)
-
 {
   ui_->setupUi(this);
   plot_ = ui_->customPlot;
+  plot_->setAutoAddPlottableToLegend(false);
 
   // Add Buttons
   // Save button
@@ -61,6 +63,11 @@ ScopeGui::ScopeGui(QWidget *parent)
   rangeEditLine_->setAlignment(Qt::AlignRight);
   ui_->toolbar->addWidget(rangeEditLine_);
 
+  cursorPointLabel_ = new QLabel("(0.0 , 0.0)");
+  cursorPointLabel_->setFixedWidth(200);
+  cursorPointLabel_->setAlignment(Qt::AlignCenter);
+  ui_->toolbar->addWidget(cursorPointLabel_);
+
   connect(plot_, SIGNAL(mousePress(QMouseEvent*)), this, SLOT(mousePress(QMouseEvent*)));
   connect(rangeEditLine_, SIGNAL(editingFinished()), this, SLOT(rangeChanged()));
   connect(&dataTimer, SIGNAL(timeout()), this, SLOT(scopeUpdate()));
@@ -72,93 +79,244 @@ ScopeGui::~ScopeGui()
   delete ui_;
 }
 
-void ScopeGui::addGraph(){
-  plot_->addGraph(); // blue line
-  plot_->graph(plot_->graphCount()-1)->setPen(QPen(Qt::blue));
+
+void ScopeGui::setScopeNumber(int N){
+
+  if (N<0){
+    std::cout<<"Error : Scope number can not be greater than 0 !" << std::endl;
+    return;
+  }
+  verticalMarginGroup_ = new QCPMarginGroup(plot_);
+  axisRects_.clear();
+  axisGraphs_.clear();
+  axisLegends_.clear();
+  plot_->plotLayout()->clear();
+  updateFunctions_ = std::vector<std::vector< std::function<std::vector<double>() >>>(0);
+  for(int i = 0; i<N; i++){
+    axisRects_.push_back(new QCPAxisRect(plot_));
+    axisRects_.back()->setupFullAxesBox(true);
+    axisLegends_.push_back(new QCPLegend());
+    axisRects_.back()->insetLayout()->addElement(
+         axisLegends_.back(), Qt::AlignTop|Qt::AlignRight);
+    axisLegends_.back()->setLayer("legend");
+
+    axisGraphs_.push_back(std::vector<QCPGraph*>(0));
+
+    plot_->plotLayout()->addElement(i,0,axisRects_.back());
+    axisRects_.back()->setMarginGroup(QCP::msLeft, verticalMarginGroup_);
+
+    updateFunctions_.push_back(std::vector<std::function<std::vector<double>()>>(0));
+  }
+  for(auto axis: axisRects_)
+  {
+    for(auto a:axis->axes()){
+      a->setLayer("axes");
+      a->grid()->setLayer("grid");
+    }
+  }
 }
 
-void ScopeGui::addGraph(QColor color){
-  plot_->addGraph(); // blue line
-  plot_->graph(plot_->graphCount()-1)->setPen(color);
+void ScopeGui::addGraph(int axisNo, std::function<std::vector<double>()> f){
+  axisGraphs_[axisNo].push_back(plot_->addGraph(
+         axisRects_[axisNo]->axis(QCPAxis::atBottom)
+       , axisRects_[axisNo]->axis(QCPAxis::atLeft)));
+  updateFunctions_[axisNo].push_back(f);
+
+}
+
+void ScopeGui::addStopFunction(std::function<void(bool)> f){
+  stopFunctions_.push_back( f);
+}
+void ScopeGui::addClearFunction(std::function<void()> f){
+  clearFunction_ = f ;
+}
+void ScopeGui::addTimeSignal(std::function<std::vector<double>()> f){
+  timeFunction_ = f ;
 }
 
 
 void ScopeGui::scopeUpdate(){
   if(!stopFlag_){
-
     addData();
-
     if (autoFitYAxis_){
-      for(int i=0; i<plot_->graphCount();i++){
-        plot_->graph(i)->rescaleValueAxis();
+      for(auto graphs : axisGraphs_){
+        for(auto graph :graphs ){
+          graph->rescaleValueAxis();
+        }
+      }
+    }
+    else{
+      for(auto graphs : axisGraphs_){
+        for(auto graph :graphs ){
+          graph->valueAxis()->setRange(yAxisMin_, yAxisMax_);
+        }
       }
     }
     if(constantXAxisRange_){
-      plot_->xAxis->setRange(lastDataX_, xAxisRange_, Qt::AlignRight);
+      if (lastDataX_<xAxisRange_){
+        for(auto graphs : axisGraphs_){
+          for(auto graph :graphs ){
+            graph->keyAxis()->setRange(xAxisRange_, xAxisRange_, Qt::AlignRight);
+          }
+        }
+      }else{
+        for(auto graphs : axisGraphs_){
+          for(auto graph :graphs ){
+            graph->keyAxis()->setRange(lastDataX_, xAxisRange_, Qt::AlignRight);
+          }
+        }
+      }
     }else{
-      plot_->xAxis->setRange(0.0, lastDataX_);
+      for(auto graphs : axisGraphs_){
+        for(auto graph :graphs ){
+          graph->keyAxis()->setRange(0.0, lastDataX_);
+        }
+      }
     }
-
     plot_->replot();
   }
 }
-void ScopeGui::setUpdateFunction(std::function<Eigen::VectorXd(double)> f){
-  updateFunction_ = f;
-}
-void ScopeGui::addData(){
-  lastDataX_ += 0.002;
 
-  Eigen::VectorXd newData = updateFunction_(lastDataX_);
-  for( int i = 0 ; i < plot_->graphCount() ; i++ ){
-    plot_->graph(i)->addData(lastDataX_,newData(i));
-    // qSin(lastDataX_) + qrand()/(double)RAND_MAX*1*qSin(lastDataX_/0.3843
+
+void ScopeGui::stopGui(bool stopFlag){
+  stopFlag_ = stopFlag ;
+  if(stopFlag_){
+    stopAct->setIconText(tr("Start"));
+    stop(true);
+  }else{
+    stopAct->setIconText(tr("Stop"));
+    stop(false);
   }
+}
+
+void ScopeGui::stop(bool stop){
+  for(auto f :stopFunctions_){
+    f(stop);
+  }
+}
+
+void ScopeGui::addData(){
+  boost::lock_guard<boost::mutex> lock(addDataMutex_);
+  stop(true);
+  std::vector<double> t = timeFunction_();
+  if( t.size() != 0 ){
+    lastDataX_ = t.back();
+    std::vector<double> newData;
+    for(int axisNo = 0 ; axisNo<axisRects_.size() ; axisNo++ ){
+      for(int graphNo = 0 ; graphNo<axisGraphs_[axisNo].size(); graphNo++ ){
+        newData = updateFunctions_[axisNo][graphNo]();
+        for( int i = 0 ; i < t.size() ; i++){
+          axisGraphs_[axisNo][graphNo]->addData(t[i],newData[i]);
+        }
+      }
+    }
+    clearFunction_();
+  }
+  stop(false);
 }
 
 
 void ScopeGui::setColor(Qt::GlobalColor color)
 {
-  int plotNo = plot_->graphCount() - 1;
-  plot_->graph(plotNo)->setPen(QPen(color));
+  // TODO : Correct this
+  //int plotNo = plot_->graphCount() - 1;
+  //plot_->graph(plotNo)->setPen(QPen(color));
 }
 
 void ScopeGui::setColor(Qt::GlobalColor color, int plotNo)
 {
-  int plotMax = plot_->graphCount() - 1;
-  if (plotNo < plotMax) {
-    plot_->graph(plotNo)->setPen(QPen(color));
-  }
+  // TODO : Correct this
+  //int plotMax = plot_->graphCount() - 1;
+  //if (plotNo < plotMax) {
+  //  plot_->graph(plotNo)->setPen(QPen(color));
+  //}
+}
+
+
+void ScopeGui::setXAxisRange(double range){
+    xAxisRange_ = range ;
+    rangeEditLine_->setText(QString::number(xAxisRange_));
 }
 
 void ScopeGui::setAxis(double xMin,double xMax,double yMin,double yMax)
 {
-  plot_->xAxis->setRange(xMin, xMax);
-  plot_->yAxis->setRange(yMin, yMax);
+  // TODO : Correct this
+  //plot_->xAxis->setRange(xMin, xMax);
+  //plot_->yAxis->setRange(yMin, yMax);
 }
 
 void ScopeGui::setXAxis(double xMin,double xMax)
 {
-  plot_->xAxis->setRange(xMin, xMax);
+  // TODO : Correct this
+  //plot_->xAxis->setRange(xMin, xMax);
 }
 
 void ScopeGui::setYAxis(double yMin,double yMax)
 {
-  plot_->yAxis->setRange(yMin, yMax);
+  yAxisMin_ = yMin ;
+  yAxisMax_ = yMax ;
 }
 
-void ScopeGui::legend(std::vector<std::string> legendNames)
+void ScopeGui::legend(int axisNo, std::vector<std::string> legendNames)
 {
-  plot_->legend->setVisible(true);
-  for (int i = 0; i < legendNames.size(); i++) {
-    plot_->graph(i)->setName(QString::fromStdString(legendNames[i]));
-  }
+    legend(axisNo,legendNames,15);
 }
+
+void ScopeGui::legend(int axisNo ,std::vector<std::string> legendNames, int fontSize)
+{
+  axisLegends_[axisNo]->clearItems();
+  for(int i = 0; i < legendNames.size(); i++){
+    axisLegends_[axisNo]->addItem(
+            new QCPPlottableLegendItem(axisLegends_[axisNo]
+          , axisGraphs_[axisNo][i] ));
+  }
+  axisLegends_[axisNo]->setVisible(true);
+  for (int i = 0; i < legendNames.size(); i++) {
+    axisGraphs_[axisNo][i]->setName(QString::fromStdString(legendNames[i]));
+  }
+  QFont font;
+  font.setPixelSize(fontSize);
+  axisLegends_[axisNo]->setFont(font);
+}
+
 
 void ScopeGui::mousePress(QMouseEvent* ev)
 {
   //QCursor::pos() global position
   const QPoint p = ev->pos();
-  cout << "Mouse pressed at " << p.x() << " , " << p.y() << " !!" << endl;
+  double xValue = -1.0;
+  double yValue = -1.0;
+  int rectNo = -1 ;
+  for(int i=0; i<axisRects_.size();i++ ){
+    auto rect = axisRects_[i];
+    if( rect->left()<p.x() && rect->right()>p.x()
+      &&rect->bottom()>p.y() && rect->top()<p.y()){
+      rectNo = i;
+      break;
+    }
+  }
+  if(ev->button() == Qt::LeftButton){
+    if(rectNo!=-1){
+      double xLowerValue = axisGraphs_[rectNo].back()->keyAxis()->range().lower;
+      double xUpperValue = axisGraphs_[rectNo].back()->keyAxis()->range().upper;
+      double yLowerValue = axisGraphs_[rectNo].back()->valueAxis()->range().lower;
+      double yUpperValue = axisGraphs_[rectNo].back()->valueAxis()->range().upper;
+      double xRatio = (double)(p.x()-axisRects_[rectNo]->left())
+                    / (axisRects_[rectNo]->right()-axisRects_[rectNo]->left());
+      double yRatio = (double)(-p.y()+axisRects_[rectNo]->bottom())
+                    / (axisRects_[rectNo]->bottom()-axisRects_[rectNo]->top());
+
+      xValue = xLowerValue + xRatio*(xUpperValue-xLowerValue);
+      yValue = yLowerValue + yRatio*(yUpperValue-yLowerValue);
+      QString pointText = QString("");
+      pointText.append( QString::fromStdString("(" ));
+      pointText.append(QString::number(xValue));
+      pointText.append( QString::fromStdString(" , " ));
+      pointText.append(QString::number(yValue));
+      pointText.append( QString::fromStdString(")" ));
+      cursorPointLabel_->setText(pointText);
+    }
+  }
 
 }
 
@@ -190,13 +348,12 @@ void ScopeGui::stopButtonPressed()
   stopFlag_ = !stopFlag_;
   if(stopFlag_){
     dataTimer.stop();
+    stopAct->setIconText(tr("Start"));
+    stop(true);
   }else{
     dataTimer.start();
-  }
-  if(stopFlag_){
-      stopAct->setIconText(tr("Start"));
-  }else{
-      stopAct->setIconText(tr("Stop"));
+    stopAct->setIconText(tr("Stop"));
+    stop(false);
   }
 }
 
