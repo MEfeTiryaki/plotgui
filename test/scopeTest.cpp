@@ -10,15 +10,17 @@
 #include <vector>
 #include <Eigen/Core>
 
-#include "ScopeGui.h"
+#include "plotgui/ScopeGui.h"
 
 using namespace std::placeholders;
 using namespace std;
 
 
-Eigen::VectorXd f(double t){
-  Eigen::VectorXd x = Eigen::VectorXd::Zero(1);
-  x[0] = sin(t);
+std::vector<Eigen::VectorXd> f(double t){
+  std::vector<Eigen::VectorXd> x ;
+  x.push_back(Eigen::VectorXd::Zero(2));
+  x.back()[0] = sin(t);
+  x.back()[1] = t;
   return x;
 }
 int main()
@@ -29,8 +31,10 @@ int main()
   QApplication app(argc, argv);
   ScopeGui gui;
 
-  gui.setUpdateFunction(std::bind(&f, _1));
-  gui.addGraph();
+  gui.setScopeNumber(1);
+  //gui.addTimeSignal(std::bind(&f, -1));
+  //gui.addTimeSignal(std::bind(&f, -1));
+  //gui.addGraph(0, std::bind(&f, 0));
   gui.show();
   return app.exec()  ;
 }

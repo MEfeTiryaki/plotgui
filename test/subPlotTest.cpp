@@ -10,7 +10,7 @@
 #include <vector>
 #include <Eigen/Core>
 
-#include "PlotGui.h"
+#include "plotgui/PlotGui.h"
 
 using namespace std;
 

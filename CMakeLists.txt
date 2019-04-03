@@ -19,6 +19,7 @@ find_package(catkin
 )
 
 find_package(Eigen3 REQUIRED)
+find_package(Boost REQUIRED  COMPONENTS system)
 find_package(Qt5Widgets REQUIRED)
 find_package(Qt5Gui REQUIRED)
 find_package(Qt5Core REQUIRED)
@@ -29,7 +30,7 @@ find_package(Qt5PrintSupport REQUIRED)
 # http://doc.qt.io/qt-5/cmake-manual.html
 set(plotgui_SRCS  PlotGui.cpp)
 qt5_wrap_ui(plotgui_UIS_H plotgui.ui)
-qt5_wrap_cpp(plotgui_MOCS include/PlotGui.h include/ScopeGui.h include/qcustomplot.h)
+qt5_wrap_cpp(plotgui_MOCS include/plotgui/PlotGui.h include/plotgui/ScopeGui.h include/plotgui/qcustomplot.h)
 
 catkin_package(
   INCLUDE_DIRS
@@ -58,6 +59,7 @@ get_target_property(QtWidgets_location Qt5::Widgets LOCATION)
 include_directories(
 	include
 	${EIGEN3_INCLUDE_DIR}
+	${Boost_INCLUDE_DIRS}
 	${CMAKE_CURRENT_BINARY_DIR}
   ${catkin_INCLUDE_DIRS}
   #${Qt5Widgets_INCLUDE_DIRS}
@@ -79,6 +81,7 @@ qt5_use_modules(${PROJECT_NAME} Core Gui Widgets PrintSupport)
 target_link_libraries(
   ${PROJECT_NAME}
 	${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
   ${Qt5Widgets_LIBRARIES}
   ${Qt5Gui_LIBRARIES}
   ${Qt5Core_LIBRARIES}
@@ -119,7 +122,7 @@ target_link_libraries(scopeguitest
 	${catkin_LIBRARIES}
 )
 
-install(DIRECTORY include
+install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   FILES_MATCHING PATTERN "*.h"
   PATTERN ".svn" EXCLUDE

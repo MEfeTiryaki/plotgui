@@ -11,9 +11,11 @@
 
 #include <iostream>
 #include <Eigen/Core>
+#include <boost/thread/thread.hpp>
+
 #include <QMainWindow>
 #include <QApplication>
-#include <qcustomplot.h>
+#include <plotgui/qcustomplot.h>
 
 using namespace std;
 namespace Ui {
@@ -29,25 +31,33 @@ class ScopeGui : public QMainWindow
   ~ScopeGui();
 
  public:
-  void setUpdateFunction(std::function<Eigen::VectorXd(double)> f);
-  void addGraph();
-  void addGraph(QColor color);
+  void setScopeNumber(int N);
+  void addTimeSignal(std::function<std::vector<double>()> f);
+  void addGraph(int axisNo, std::function<std::vector<double>()> f);
+  void addStopFunction(std::function<void(bool)> f);
+  void addClearFunction(std::function<void()> f);
+
+  void stopGui(bool stop);
 
   void setColor(Qt::GlobalColor color);
   void setColor(Qt::GlobalColor color, int plotNo);
 
+  void setXAxisRange(double range);
 
   void setAxis(double xMin,double xMax,double yMin,double yMax);
   void setXAxis(double xMin,double xMax);
   void setYAxis(double yMin,double yMax);
 
-  void legend(std::vector<string> legendNames);
+  void legend(int axisNo ,std::vector<std::string> legendNames, int fontSize);
+  void legend(int axisNo ,std::vector<std::string> legendNames);
 
 protected:
   virtual void addData();
 
 private slots:
   void scopeUpdate();
+  void stop(bool stop);
+
   void mousePress(QMouseEvent* ev);
   void savePlot();
   void zoomButtonPressed();
@@ -55,6 +65,7 @@ private slots:
   void fitButtonPressed();
   void lockButtonPressed();
   void rangeChanged();
+
  private:
 
   Ui::PlotGui *ui_;
@@ -66,14 +77,25 @@ private slots:
   QAction *fitAct ;
   QAction *lockAct ;
   QLineEdit *rangeEditLine_;
+  QLabel *cursorPointLabel_;
 
-  std::function<Eigen::VectorXd(double)> updateFunction_;
-
+  std::function<std::vector<double>()> timeFunction_;
+  std::vector<std::vector<std::function<std::vector<double>()> > > updateFunctions_;
+  std::vector<std::function<void(bool)>> stopFunctions_;
+  std::function<void()> clearFunction_;
   int updateRate_;
+  boost::mutex addDataMutex_;
 
   double xAxisRange_ ;
+  double yAxisMin_  ;
+  double yAxisMax_  ;
   bool constantXAxisRange_;
   double lastDataX_;
+
+  std::vector<QCPAxisRect*> axisRects_;
+  std::vector<QCPLegend*> axisLegends_;
+  std::vector<std::vector<QCPGraph*>> axisGraphs_;
+  QCPMarginGroup* verticalMarginGroup_;
 
   bool autoFitYAxis_;
 

@@ -13,7 +13,7 @@
 #include <Eigen/Core>
 #include <QMainWindow>
 #include <QApplication>
-#include <qcustomplot.h>
+#include <plotgui/qcustomplot.h>
 
 using namespace std;
 namespace Ui {
@@ -24,13 +24,42 @@ class PlotGui : public QMainWindow
 {
   Q_OBJECT
  public:
+  /** \~turkish
+     Yeni bir çizit açmak için bu sınıftan bir nesne oluşturmanız yeterlidir.
+     @param[parent] ata sınıfın türünden boş işaretçi
+     \~english
+     To launch a new figure it is enough to create a instance of this class
+    */
   explicit PlotGui(QWidget *parent = nullptr);
 
   ~PlotGui();
 
  public:
+   /*! \~turkish
+       @param[x]
+       @param[y]
+
+       \~english
+       @param[x]
+       @param[y]
+
+     */
   void plot(Eigen::VectorXd x, Eigen::VectorXd y);
+
+  /*!
+
+  @param[x]
+  @param[y]
+  @param[color]
+
+  \see plot
+  */
   void plot(Eigen::VectorXd x_eig, Eigen::VectorXd y_eig, Qt::GlobalColor color);
+
+  void plot(Eigen::VectorXd x_eig, Eigen::VectorXd y_eig, Qt::GlobalColor color ,int lineWidth);
+
+  void plot(Eigen::VectorXd x_eig, Eigen::VectorXd y_eig ,int lineWidth);
+
 
   void scatter(Eigen::VectorXd x, Eigen::VectorXd y);
   void scatter(Eigen::VectorXd x_eig, Eigen::VectorXd y_eig, Qt::GlobalColor color);
@@ -81,7 +110,7 @@ private slots:
   void moveButtonPressed();
  private:
 
-  Ui::PlotGui *ui_;
+  Ui::PlotGui *ui_; /*!< \~turkish Kullanıcı arayüzü sınıfı göstericisi \~english User interface class */
   QCustomPlot *plot_;
   QLabel *cursorPointLabel_;
   QAction *saveAct_;
