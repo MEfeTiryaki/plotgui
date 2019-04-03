@@ -10,5 +10,6 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <depend>eigen</depend>
+  <depend>ros_node_utils</depend>
 
 </package>

@@ -12,7 +12,11 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 SET(qt_gui_cpp_USE_QT_MAJOR_VERSION 5)
 
 
-find_package(catkin REQUIRED COMPONENTS)
+find_package(catkin
+  REQUIRED
+  COMPONENTS
+    ros_node_utils
+)
 
 find_package(Eigen3 REQUIRED)
 find_package(Qt5Widgets REQUIRED)
@@ -33,6 +37,7 @@ catkin_package(
   LIBRARIES
     ${PROJECT_NAME} # exports the  lib to catkin_LIBRARIES
   CATKIN_DEPENDS
+    ros_node_utils
   DEPENDS
 )
 
@@ -54,6 +59,7 @@ include_directories(
 	include
 	${EIGEN3_INCLUDE_DIR}
 	${CMAKE_CURRENT_BINARY_DIR}
+  ${catkin_INCLUDE_DIRS}
   #${Qt5Widgets_INCLUDE_DIRS}
   #${Qt5Core_INCLUDE_DIRS}
   #${Qt5Gui_INCLUDE_DIRS}
@@ -78,6 +84,16 @@ target_link_libraries(
   ${Qt5Core_LIBRARIES}
   ${Qt5PrintSupport_LIBRARIES}
 )
+
+add_executable(ros_scope
+	src/ros_scope.cpp
+)
+target_link_libraries(ros_scope
+  ${PROJECT_NAME}
+	${catkin_LIBRARIES}
+)
+
+
 
 add_executable(plottest
 	test/plotTest.cpp
