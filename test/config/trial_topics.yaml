@@ -1,0 +1,15 @@
+ros_scope:
+  layout:
+    rows: 2
+
+  topic_0:
+    type: Float64MultiArray
+    name: /mri_untethered/vision/robot_state
+    index: 2
+    plot_no : 0
+
+  topic_1:
+    type: Float64
+    name: /mri_untethered/marker/magnetic_gradient_command
+    index: 1
+    plot_no : 0

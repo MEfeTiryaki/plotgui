@@ -10,10 +10,8 @@
 #include <vector>
 #include <Eigen/Core>
 
-#include "ScopeGui.h"
 #include "RosScope.hpp"
 
-using namespace std::placeholders;
 using namespace std;
 
 int main()
@@ -21,8 +19,13 @@ int main()
   int argc;
   char **argv;
   QApplication app(argc, argv);
-  ScopeGui gui;
 
-  gui.show();
+
+  RosScope scope("ros_scope");
+  scope.create();
+  scope.initialize();
+  scope.start();
+
+
   return app.exec()  ;
 }

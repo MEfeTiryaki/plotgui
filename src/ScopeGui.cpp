@@ -212,6 +212,7 @@ void ScopeGui::addData(){
     }
     clearFunction_();
   }
+
   stop(false);
 }
 

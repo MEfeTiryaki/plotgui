@@ -72,6 +72,7 @@ add_library(${PROJECT_NAME}
 	src/PlotGui.cpp
 	src/ScopeGui.cpp
 	src/qcustomplot.cpp
+	src/RosScope.cpp
 	${plotgui_MOCS}
 )
 

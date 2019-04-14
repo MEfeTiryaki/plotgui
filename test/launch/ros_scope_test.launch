@@ -1,0 +1,9 @@
+<launch>
+
+  <rosparam command="load"   file="$(find plotgui)/test/config/trial_topics.yaml"/>
+
+<node pkg="plotgui"  name="Scope" type="ros_scope"  output="screen">
+
+</node>
+
+</launch>
