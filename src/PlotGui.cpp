@@ -376,7 +376,10 @@ void PlotGui::mousePress(QMouseEvent* ev)
       return ;
     }
     if(zoomFlag_){
-      return ;
+      if(rectNo!=-1){
+        std::cout << rectNo << std::endl;
+        axisRects_[rectNo]->setRangeZoomAxes(plot_->xAxis, NULL);
+      }
     }
     if(rectNo!=-1){
       double xLowerValue = axisGraphs_[rectNo].back()->keyAxis()->range().lower;
@@ -397,6 +400,13 @@ void PlotGui::mousePress(QMouseEvent* ev)
       pointText.append(QString::number(yValue));
       pointText.append( QString::fromStdString(")" ));
       cursorPointLabel_->setText(pointText);
+    }
+  }
+  if(ev->button() == Qt::RightButton){
+    if(zoomFlag_){
+      if(rectNo!=-1){
+        axisRects_[rectNo]->setRangeZoomAxes(NULL,plot_->yAxis);
+      }
     }
   }
 }
@@ -439,10 +449,14 @@ void PlotGui::zoomButtonPressed()
     this->setCursor(Qt::CrossCursor);
 
     plot_->setInteraction(QCP::iRangeZoom,true);
+    for(int i=0; i<axisRects_.size();i++ ){
+      axisRects_[i]->setRangeZoomAxes(plot_->xAxis,plot_->yAxis);
+    }
+
     zoomAct_->setIconText(tr("&Zoom"));
   } else {
     this->setCursor(Qt::ArrowCursor);
-    plot_->setInteraction(QCP::iRangeZoom,true);
+    plot_->setInteraction(QCP::iRangeZoom,false);
     zoomAct_->setIconText(tr("Zoom"));
   }
 }
